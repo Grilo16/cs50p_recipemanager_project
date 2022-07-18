@@ -1,4 +1,4 @@
-# Recipe and food stock manager
+# Recipe and food stock manager showing to jay
 #### Video Demo:  <URL HERE>
 #### Description:
 
