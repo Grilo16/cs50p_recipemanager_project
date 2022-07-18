@@ -1,4 +1,4 @@
-# Recipe and food 3stock manager
+# Recipe and food stock manager
 #### Video Demo:  <URL HERE>
 #### Description:
 
