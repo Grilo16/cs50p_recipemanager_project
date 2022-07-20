@@ -1,3 +1,6 @@
+import sqlite3
+from tableClass import Table
+from helpers import chooseFromList
 
 # A class to handle recipes
 class RecipeBook(Table):
@@ -6,12 +9,13 @@ class RecipeBook(Table):
         super().__init__(recipeTable, database)
 
     # Lists all the recipes in the database, optionally select one
-    def showRecipes(self, get=False):
-        if get:
-            recipe = chooseFromList(self.showTable(
-                columns="name"), "Go Back", inputMessage="Show ingredients for recipe number: ")
-            return recipe
-        self.showTable()
+    def getRecipe(self):
+        recipe = chooseFromList(
+            self.showTable(columns="name"),
+            "Go Back",
+            inputMessage="Show ingredients for recipe number: ",
+        )
+        return recipe
 
     # Get all ingredients from a recipe, optionally display them
     def getIngredients(self, recipeName, show=False):
@@ -19,7 +23,8 @@ class RecipeBook(Table):
         con = sqlite3.connect("database.db")
         cursor = con.cursor()
         cursor.execute(
-            f"SELECT f.id, f.name, i.quantity FROM recipes r LEFT JOIN ingredients i ON r.id = i.recipe_id LEFT JOIN food_db f ON f.id = i.food_id WHERE lower(r.name) = '{recipeName}'")
+            f"SELECT f.id, f.name, i.quantity FROM recipes r LEFT JOIN ingredients i ON r.id = i.recipe_id LEFT JOIN foods_table f ON f.id = i.food_id WHERE lower(r.name) = '{recipeName}'"
+        )
         results = cursor.fetchall()
         con.close()
         if show:

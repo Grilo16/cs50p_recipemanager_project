@@ -1,7 +1,8 @@
 import sqlite3
 
+
 # A table handler class
-class Table():
+class Table:
     # Takes table name and database name
     def __init__(self, tableName, database):
         self.tableName = tableName
@@ -27,11 +28,13 @@ class Table():
         cursor = con.cursor()
         if similar:
             cursor.execute(
-                f"SELECT {column} FROM {self.tableName} WHERE {searchCol} LIKE'%{name}%'")
+                f"SELECT {column} FROM {self.tableName} WHERE {searchCol} LIKE'%{name}%'"
+            )
             row = cursor.fetchall()
         else:
             cursor.execute(
-                f"SELECT {column} FROM {self.tableName} WHERE {searchCol} = '{name}'")
+                f"SELECT {column} FROM {self.tableName} WHERE {searchCol} = '{name}'"
+            )
             row = cursor.fetchone()
         con.close
         return row
@@ -42,8 +45,7 @@ class Table():
         cursor = con.cursor()
         keys = ", ".join(values.keys())
         values = str(list(values.values())).strip("[]")
-        cursor.execute(
-            f"INSERT INTO {self.tableName} ({keys}) VALUES ({values})")
+        cursor.execute(f"INSERT INTO {self.tableName} ({keys}) VALUES ({values})")
         con.commit()
         con.close()
 
@@ -52,21 +54,24 @@ class Table():
         con = sqlite3.connect(self.database)
         cursor = con.cursor()
         cursor.execute(
-            f"UPDATE {self.tableName} SET {column} = '{newValue}' WHERE {condition}")
+            f"UPDATE {self.tableName} SET {column} = '{newValue}' WHERE {condition}"
+        )
         con.commit()
         con.close()
 
     # Check if a matching or similar item existis in a table
-    def is_inTable(self, searchCol, searchVal, showColumn="*", similar=False):
+    def isInTable(self, searchCol, searchVal, showColumn="*", similar=False):
         con = sqlite3.connect(self.database)
         cursor = con.cursor()
         if similar:
             cursor.execute(
-                f"SELECT {showColumn} FROM {self.tableName} WHERE lower({searchCol}) LIKE '%{searchVal}%'")
+                f"SELECT {showColumn} FROM {self.tableName} WHERE lower({searchCol}) LIKE '%{searchVal}%'"
+            )
             ingredients = cursor.fetchall()
         else:
             cursor.execute(
-                f"SELECT {showColumn} FROM {self.tableName} WHERE lower({searchCol}) = '{searchVal}'")
+                f"SELECT {showColumn} FROM {self.tableName} WHERE lower({searchCol}) = '{searchVal}'"
+            )
             ingredients = cursor.fetchone()
         con.close()
         if ingredients:
