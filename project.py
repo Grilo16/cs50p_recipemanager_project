@@ -1,6 +1,4 @@
-from tableClass import Table
-from stockClass import Stock
-from recipesClass import RecipeBook
+from classes import Table, RecipeBook, Stock
 from helpers import chooseFromList, getUserInput, pressToContinue, recipesAvailable
 
 import requests
