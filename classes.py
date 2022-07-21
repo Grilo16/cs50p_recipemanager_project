@@ -1,3 +1,4 @@
+from os import system
 import sqlite3
 from helpers import chooseFromList
 
@@ -75,45 +76,46 @@ class Table:
 class Stock(Table):
     def __init__(self, table, dbFileName):
         super().__init__(table, dbFileName)
+    
+    def __str__(self):
+        output = ""
+        self.cursor.execute(
+            f"SELECT name, stock_amount FROM foods_table WHERE stock_amount > 0"
+        )
+        results = self.cursor.fetchall()
+        for i in results:
+            displayString = (f"{i[0]}, {i[1]}g")
+            output += displayString + "\n"
+       
+    
+        return output.strip()
+    
+    # Update stock amounts 
+    def addToStock(self, item, amount):
+        currentStock = self.getStock(item)
+        newStock = currentStock + amount
+        self.changeCell(newStock, f"name = '{item}'", "stock_amount")
+   
+    def useFromStock(self, item, amount):
+        currentStock = self.getStock(item)
+        newStock = currentStock - amount
+        self.changeCell(newStock, f"name = '{item}'", "stock_amount")
+    
 
-    # Returns a list of ingredients available, optionally choose an ingredient, or print the recipe, or search for specific ingredient
-    def getStock(self, item=False, show=False, get=False):
-        if get:
-            self.cursor.execute(
-                f"SELECT name, stock_amount FROM foods_table WHERE stock_amount > 0"
-            )
-            results = self.cursor.fetchall()
-            items = []
-            names = []
-            for result in results:
-                items.append(f"{result[1]}g of {result[0]}")
-                names.append(result[0])
-            choice = chooseFromList(
-                items,
-                "Go back",
-                inputMessage="Show nutrients for ingredient number: ",
-                title="\nAvailable stock items\n",
-                returnIndex=True,
-            )
-            names.append("Go back")
-            return names[choice]
-        if item:
-            self.cursor.execute(
-                f"SELECT name, stock_amount FROM foods_table WHERE name LIKE '%{item}%' AND stock_amount > 0 "
-            )
-            results = self.cursor.fetchall()
-        else:
-            self.cursor.execute(
-                f"SELECT name, stock_amount FROM foods_table WHERE stock_amount > 0"
-            )
-            results = self.cursor.fetchall()
-        if show:
-            for i in results:
-                print(f"{i[0]}, {i[1]}g")
-        return results
+    # Returns either one item, amount from stock or all items with amount higher than 0
+    def getStock(self, item=False, all=False):
+            if item:
+                    return self.getItem(item, "name", column="stock_amount")[0]
+            elif all:
+                    self.cursor.execute(
 
-        # Get a string containing ingredient's nutritional values
+                    f"SELECT name, stock_amount FROM foods_table WHERE stock_amount > 0 "
+            
+                    )
+                    results = self.cursor.fetchall()
+            return results
 
+    # Get a string containing ingredient's nutritional values
     def getNutrition(self, name):
         self.cursor.execute(
             f"SELECT name, kcal, proteins, fats, carbs stock_amount FROM foods_table WHERE name = '{name}'"
@@ -121,6 +123,7 @@ class Stock(Table):
         fname, energy, proteins, fats, carbs = self.cursor.fetchone()
         return f"100g of {fname} has {energy} calories\n{proteins}g of proteins {carbs}g of carbs and {fats}g of fats"
 
+    
 
 # A class to handle recipes
 class RecipeBook(Table):

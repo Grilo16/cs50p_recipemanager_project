@@ -5,6 +5,7 @@ import requests
 import sqlite3
 
 
+    
 # Define global Table objecs
 FOOD_TABLE = Table("foods_table", "database.db")
 RECIPES = Table("recipes", "database.db")
@@ -19,37 +20,11 @@ STOCK = Stock("foods_table", "database.db")
 
 def main():
 
-    # Check if database exists, if not create it
-    con = sqlite3.connect("database.db")
-    cursor = con.cursor()
-    cursor.execute("SELECT name FROM sqlite_master")
-    result = cursor.fetchall()
-    if not result == [
-        ("foods_table",),
-        ("sqlite_autoindex_foods_table_1",),
-        ("recipes",),
-        ("sqlite_autoindex_recipes_1",),
-        ("ingredients",),
-        ("sqlite_autoindex_ingredients_1",),
-    ]:
-
-        # Create foods_table table
-        cursor.execute(
-            "CREATE TABLE foods_table(id INTEGER NOT NULL PRIMARY KEY, name TEXT NOT NULL, kcal FLOAT, proteins FLOAT, fats FLOAT, carbs, quantity FLOAT DEFAULT 100, stock_amount INT DEFAULT 0, UNIQUE(name))"
-        )
-
-        # Create recipes table
-        cursor.execute(
-            "CREATE TABLE recipes(id INTEGER NOT NULL PRIMARY KEY, name TEXT NOT NULL, UNIQUE(name))"
-        )
-
-        # Create ingredients table
-        cursor.execute(
-            "CREATE TABLE ingredients(recipe_id INTEGER NOT NULL, food_id INTEGER NOT NULL, quantity INTEGER NOT NULL, UNIQUE (recipe_id, food_id))"
-        )
-        con.commit()
-    con.close()
-
+    ensureTables()
+    showUi()
+    
+def showUi():
+    
     # Present the user with program's functionalities to choose from
     choices = [
         "Show all recipes",
@@ -76,9 +51,15 @@ def main():
 
         elif choice == "Show ingredients in stock":
             while True:
-                ingredient = STOCK.getStock(get=True)
-                if ingredient != "Go back":
-                    print(STOCK.getNutrition(ingredient))
+                formatedStock = []
+                stock = STOCK.getStock(all=True)
+                for item in stock:
+                    formatedStock.append(f"{item[1]}g of {item[0]}")
+
+                ingredient = chooseFromList(formatedStock, "Go back", title="\nItems in stock\nChoose an item to show nutritional contents\n", inputMessage="Select an option: ", returnIndex=True)    
+
+                if ingredient != len(formatedStock) - 1:
+                    print(STOCK.getNutrition(stock[ingredient][0]))
                     pressToContinue()
                     continue
                 else:
@@ -124,6 +105,39 @@ def main():
             continue
         elif choice == "Close Program":
             break
+
+def ensureTables(dataBase="database.db"):
+    # Check if database exists, if not create it
+    con = sqlite3.connect(dataBase)
+    cursor = con.cursor()
+    cursor.execute("SELECT name FROM sqlite_master")
+    result = cursor.fetchall()
+    if not result == [
+        ("foods_table",),
+        ("sqlite_autoindex_foods_table_1",),
+        ("recipes",),
+        ("sqlite_autoindex_recipes_1",),
+        ("ingredients",),
+        ("sqlite_autoindex_ingredients_1",),
+    ]:
+
+        # Create foods_table table
+        cursor.execute(
+            "CREATE TABLE foods_table(id INTEGER NOT NULL PRIMARY KEY, name TEXT NOT NULL, kcal FLOAT, proteins FLOAT, fats FLOAT, carbs, quantity FLOAT DEFAULT 100, stock_amount INT DEFAULT 0, UNIQUE(name))"
+        )
+
+        # Create recipes table
+        cursor.execute(
+            "CREATE TABLE recipes(id INTEGER NOT NULL PRIMARY KEY, name TEXT NOT NULL, UNIQUE(name))"
+        )
+
+        # Create ingredients table
+        cursor.execute(
+            "CREATE TABLE ingredients(recipe_id INTEGER NOT NULL, food_id INTEGER NOT NULL, quantity INTEGER NOT NULL, UNIQUE (recipe_id, food_id))"
+        )
+        con.commit()
+    con.close()
+
 
 
 def verifyRecipe(recipe):
@@ -224,18 +238,13 @@ def cookRecipe():
     # Get dictionary of ingredients : amounts from recipe
     recipe = RECIPEBOOK.getIngredients(recipeName)
 
-    # Iterate over every ingredient
+    # Iterate over every ingredient changing the stock in the database
     for Ingredient in recipe:
-        ingredient = Ingredient[1]
-        amount = Ingredient[2]
-        newStock = STOCK.getStock(item=ingredient)[0][1] - amount
-
-        # Update database with new stock amount
-        FOOD_TABLE.changeCell(newStock, f"name = '{ingredient}'", "stock_amount")
+        ingredient, amount = Ingredient[1::]
+        STOCK.useFromStock(ingredient, amount)
 
     # Present the user with the ingredients that were used
-    print(f"\n\nyou cooked: {recipeName}")
-    print("You have used: \n")
+    print(f"\n\nyou cooked: {recipeName}\nYou have used: \n")
     for ingredient in recipe:
         print(f"{ingredient[2]}g of {ingredient[1]}")
     print()
@@ -253,19 +262,18 @@ def addToStock(ingredient, amount):
         if ingredient == "search online":
             ingredient = addNewIngredient(getUserInput("Search for new ingredient: "))
     else:
-        print(
-            f"\nItem: {ingredient}, is not in the database \nplease add it to the database"
-        )
-        print("\n-- Adding new ingredient --\nType 'cancel' to go back \n")
-        ingredient = addNewIngredient(getUserInput("Search for new ingredient: "))
+        searchOption = chooseFromList([f"Search for {ingredient} online", "Search using a different term", "cancel adding ingredients"], returnIndex=True, title=f"\nItem: {ingredient}, is not in the database \n")
+        if searchOption == 0:
+            ingredient = addNewIngredient(ingredient)
+        elif searchOption == 1:
+            ingredient = addNewIngredient(getUserInput("What food would you like to search for? "))
+        elif searchOption == 2:
+            return
         if not ingredient:
             return
 
-    # Get current ingredient's quantity in stock from the database and update it
-    currentStock = FOOD_TABLE.getItem(ingredient, "name", column="stock_amount")[0]
-    newStock = currentStock + amount
-    FOOD_TABLE.changeCell(newStock, f"name = '{ingredient}'", "stock_amount")
-
+    STOCK.addToStock(ingredient, amount)
+    
     print(f"\nSuccessfully added {amount}g to the stock of {ingredient}\n")
 
 
@@ -388,8 +396,7 @@ def addNewIngredient(ingName):
 
         # Search resulted in 0 options query the user to search using different terms
         if search["totalHits"] == 0:
-            print("no results from your query")
-            print("type 'cancel' to go back or")
+            print("no results from your query\ntype 'cancel' to go back or")
             ingName = getUserInput("Search using a different term: ")
             continue
         # Search with positive results
