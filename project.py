@@ -5,7 +5,6 @@ import requests
 import sqlite3
 
 
-    
 # Define global Table objecs
 FOOD_TABLE = Table("foods_table", "database.db")
 RECIPES = Table("recipes", "database.db")
@@ -22,9 +21,10 @@ def main():
 
     ensureTables()
     showUi()
-    
+
+
 def showUi():
-    
+
     # Present the user with program's functionalities to choose from
     choices = [
         "Show all recipes",
@@ -56,7 +56,13 @@ def showUi():
                 for item in stock:
                     formatedStock.append(f"{item[1]}g of {item[0]}")
 
-                ingredient = chooseFromList(formatedStock, "Go back", title="\nItems in stock\nChoose an item to show nutritional contents\n", inputMessage="Select an option: ", returnIndex=True)    
+                ingredient = chooseFromList(
+                    formatedStock,
+                    "Go back",
+                    title="\nItems in stock\nChoose an item to show nutritional contents\n",
+                    inputMessage="Select an option: ",
+                    returnIndex=True,
+                )
 
                 if ingredient != len(formatedStock) - 1:
                     print(STOCK.getNutrition(stock[ingredient][0]))
@@ -106,6 +112,7 @@ def showUi():
         elif choice == "Close Program":
             break
 
+
 def ensureTables(dataBase="database.db"):
     # Check if database exists, if not create it
     con = sqlite3.connect(dataBase)
@@ -137,7 +144,6 @@ def ensureTables(dataBase="database.db"):
         )
         con.commit()
     con.close()
-
 
 
 def verifyRecipe(recipe):
@@ -262,18 +268,28 @@ def addToStock(ingredient, amount):
         if ingredient == "search online":
             ingredient = addNewIngredient(getUserInput("Search for new ingredient: "))
     else:
-        searchOption = chooseFromList([f"Search for {ingredient} online", "Search using a different term", "cancel adding ingredients"], returnIndex=True, title=f"\nItem: {ingredient}, is not in the database \n")
+        searchOption = chooseFromList(
+            [
+                f"Search for {ingredient} online",
+                "Search using a different term",
+                "cancel adding ingredients",
+            ],
+            returnIndex=True,
+            title=f"\nItem: {ingredient}, is not in the database \n",
+        )
         if searchOption == 0:
             ingredient = addNewIngredient(ingredient)
         elif searchOption == 1:
-            ingredient = addNewIngredient(getUserInput("What food would you like to search for? "))
+            ingredient = addNewIngredient(
+                getUserInput("What food would you like to search for? ")
+            )
         elif searchOption == 2:
             return
         if not ingredient:
             return
 
     STOCK.addToStock(ingredient, amount)
-    
+
     print(f"\nSuccessfully added {amount}g to the stock of {ingredient}\n")
 
 

@@ -12,9 +12,9 @@ class Table:
         with sqlite3.connect(self.dbFileName) as dataBase:
             self.dataBase = dataBase
             self.cursor = dataBase.cursor()
-        
+
     # Returns a list with all or just selected columns from a table
-    def showTable(self, columns="*"):        
+    def showTable(self, columns="*"):
         self.cursor.execute(f"SELECT {columns} FROM {self.tableName}")
         table = self.cursor.fetchall()
         output = []
@@ -44,7 +44,6 @@ class Table:
         values = str(list(values.values())).strip("[]")
         self.cursor.execute(f"INSERT INTO {self.tableName} ({keys}) VALUES ({values})")
         self.dataBase.commit()
-        
 
     # Changes the value of one or many cells in the table based on a condition
     def changeCell(self, newValue, condition, column):
@@ -71,12 +70,11 @@ class Table:
             return False
 
 
-
 # A class to deal with user's current stock of ingredients
 class Stock(Table):
     def __init__(self, table, dbFileName):
         super().__init__(table, dbFileName)
-    
+
     def __str__(self):
         output = ""
         self.cursor.execute(
@@ -84,36 +82,32 @@ class Stock(Table):
         )
         results = self.cursor.fetchall()
         for i in results:
-            displayString = (f"{i[0]}, {i[1]}g")
+            displayString = f"{i[0]}, {i[1]}g"
             output += displayString + "\n"
-       
-    
+
         return output.strip()
-    
-    # Update stock amounts 
+
+    # Update stock amounts
     def addToStock(self, item, amount):
         currentStock = self.getStock(item)
         newStock = currentStock + amount
         self.changeCell(newStock, f"name = '{item}'", "stock_amount")
-   
+
     def useFromStock(self, item, amount):
         currentStock = self.getStock(item)
         newStock = currentStock - amount
         self.changeCell(newStock, f"name = '{item}'", "stock_amount")
-    
 
     # Returns either one item, amount from stock or all items with amount higher than 0
     def getStock(self, item=False, all=False):
-            if item:
-                    return self.getItem(item, "name", column="stock_amount")[0]
-            elif all:
-                    self.cursor.execute(
-
-                    f"SELECT name, stock_amount FROM foods_table WHERE stock_amount > 0 "
-            
-                    )
-                    results = self.cursor.fetchall()
-            return results
+        if item:
+            return self.getItem(item, "name", column="stock_amount")[0]
+        elif all:
+            self.cursor.execute(
+                f"SELECT name, stock_amount FROM foods_table WHERE stock_amount > 0 "
+            )
+            results = self.cursor.fetchall()
+        return results
 
     # Get a string containing ingredient's nutritional values
     def getNutrition(self, name):
@@ -123,7 +117,6 @@ class Stock(Table):
         fname, energy, proteins, fats, carbs = self.cursor.fetchone()
         return f"100g of {fname} has {energy} calories\n{proteins}g of proteins {carbs}g of carbs and {fats}g of fats"
 
-    
 
 # A class to handle recipes
 class RecipeBook(Table):
